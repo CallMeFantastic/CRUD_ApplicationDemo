@@ -14,6 +14,7 @@ public class ApplicationDemo {
     private JTextField usernamefield;
     private JPasswordField passwordfield;
     private JButton loginButton;
+    private JButton button1;
 
 
     public static void main(String[] args) {
@@ -41,9 +42,6 @@ public class ApplicationDemo {
         }
     }
 
-
-
-
     public ApplicationDemo(){
         //set enterprise icon
         ImageIcon iconlogo = new ImageIcon("logo.png");
@@ -62,14 +60,27 @@ public class ApplicationDemo {
                     ResultSet rs = pst.executeQuery();
                     if(rs.next()){
                         JOptionPane.showMessageDialog(null,"Login Successful");
+                        panellocard.removeAll();
+                        panellocard.add(panellomain);
+                        panellocard.repaint();
+                        panellocard.revalidate();
                     }
                     else{
-                        //TODO: manage and divide the two options ( user or password or both)
+                        //TODO: manage and divide the two options ( user or password or both incorrect)
                         JOptionPane.showMessageDialog(null,"Password or User incorrect");
                     }
                 } catch (SQLException ex) {
                     ex.printStackTrace();
                 }
+            }
+        });
+        button1.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                panellocard.removeAll();
+                panellocard.add(panellouser);
+                panellocard.repaint();
+                panellocard.revalidate();
             }
         });
     }
