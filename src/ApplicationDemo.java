@@ -1,10 +1,7 @@
 import net.proteanit.sql.DbUtils;
 
 import javax.swing.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
+import java.awt.event.*;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -22,6 +19,9 @@ public class ApplicationDemo {
     private JTable table3;
     private JList list1;
     private JButton submitorder;
+    private JTextField ordernotes;
+    private JRadioButton takeAwayRadioButton;
+    private JTextField desiredArrivalOrder;
 
     private Connection con;
     private PreparedStatement pst;
@@ -89,13 +89,35 @@ public class ApplicationDemo {
         }
     }
 
+    public void updateorder(List ls){
+        DefaultListModel demoList = new DefaultListModel();
+        demoList.addElement(ls);
+        //TODO: try list of lists in future versions
+        list1.setModel(demoList);
+    }
+
     public int generaterandomidcustomer(){
         Random rd = new Random();
         return rd.nextInt(51);
     }
 
-    //init method per inizializzare fake "chiamata da parte del customer" scegliendo un numero random da 1 a 50(?)
-    //richiama metodo connect per la connessione al database e setta anche il logo dell'azienda
+    /*
+    //TODO:completa metodo, hai una lista di nomi di prodotti
+    public void addOrder(List ls){
+        try{
+            pst = con.prepareStatement("insert into order(fromcustomer,ts,desiredtime,takeaway,numofprod,numofpizza,price,notes) values()");
+            pst.setString(1,idcustomer);
+            pst.executeUpdate();
+            System.out.println("Order inserted");
+        }catch(SQLException e){
+            e.printStackTrace();
+        }
+
+    }*/
+
+    /*init method per inizializzare fake "chiamata da parte del customer" scegliendo un numero random da 1 a 50(?)
+    richiama metodo connect per la connessione al database e setta anche il logo dell'azienda*/
+
     public void init(){
         //set enterprise icon
         ImageIcon iconlogo = new ImageIcon("logo.png");
@@ -111,48 +133,17 @@ public class ApplicationDemo {
         init();
         //action listener
         listorder = new ArrayList<>();
-        /*
-        loginButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                try {
-                    pst = con.prepareStatement("select id from user where username=? and password=?");
-                    pst.setString(1,usernamefield.getText());
-                    pst.setString(2, String.valueOf(passwordfield.getPassword()));
-                    ResultSet rs = pst.executeQuery();
-                    if(rs.next()){
-                        JOptionPane.showMessageDialog(null,"Login Successful");
-                        panellocard.removeAll();
-                        panellocard.add(panellomain);
-                        panellocard.repaint();
-                        panellocard.revalidate();
-                    }
-                    else{
-                        JOptionPane.showMessageDialog(null,"Password or User incorrect");
-                    }
-                } catch (SQLException ex) {
-                    ex.printStackTrace();
-                }
-            }
-        }); */
 
-        submitorder.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                panellocard.removeAll();
-                panellocard.add(panellouser);
-                panellocard.repaint();
-                panellocard.revalidate();
-            }
-        });
         table1.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
                 super.mouseClicked(e);
                 if (e.getClickCount() == 1) {
                     int row = table1.getSelectedRow();
+                    //TODO:prova con element collection nome e prezzo, nome e prezzo ... (anche per table1) in future versions
                     listorder.add(table1.getValueAt(row,1));
                     System.out.println("questo è l'ordine" +listorder);
+                    updateorder(listorder);
                 }
 
             }
@@ -164,13 +155,62 @@ public class ApplicationDemo {
                 super.mouseClicked(e);
                 if (e.getClickCount() == 1) {
                     int row = table3.getSelectedRow();
-                    //TODO:prova con element collection nome e prezzo, nome e prezzo ... (anche per table1)
+                    //TODO:prova con element collection nome e prezzo, nome e prezzo ... (anche per table1) in future versions
                     listorder.add(table3.getValueAt(row,1));
                     System.out.println("questo è l'ordine" +listorder);
+                    updateorder(listorder);
                 }
 
             }
         });
+        //TODO: fix that text disappears if you start clicking both textfields ordernotes and desiredarrivaltextfield in future versions
+        ordernotes.addFocusListener(new FocusAdapter() {
+            @Override
+            public void focusGained(FocusEvent e) {
+                super.focusGained(e);
+                ordernotes.setText("");
+            }
+
+            @Override
+            public void focusLost(FocusEvent e) {
+                super.focusLost(e);
+                if(ordernotes.getText().isBlank()){
+                    ordernotes.setText("Notes");
+                }
+            }
+        });
+
+        desiredArrivalOrder.addFocusListener(new FocusAdapter() {
+            @Override
+            public void focusGained(FocusEvent e) {
+                super.focusGained(e);
+                desiredArrivalOrder.setText("");
+            }
+
+            @Override
+            public void focusLost(FocusEvent e) {
+                super.focusLost(e);
+                if(desiredArrivalOrder.getText().isBlank()){
+                    desiredArrivalOrder.setText("Desired arrival time");
+                }
+            }
+        });
+
+        submitorder.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                String notes = ordernotes.getText();
+                String desarr = desiredArrivalOrder.getText();
+                Boolean takeaway = takeAwayRadioButton.isSelected();
+                System.out.println("" + notes +"\n" +desarr +"\n"+takeaway);
+                //addOrder(listorder,notes,desarr,takeaway);
+                panellocard.removeAll();
+                panellocard.add(panellomain);
+                panellocard.repaint();
+                panellocard.revalidate();
+            }
+        });
+
     }
 
 }
