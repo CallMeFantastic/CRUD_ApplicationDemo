@@ -4,7 +4,6 @@ import javax.swing.*;
 import java.awt.event.*;
 import java.sql.*;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.Random;
 
@@ -39,12 +38,6 @@ public class ApplicationDemo {
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.pack();
         frame.setVisible(true);
-    }
-
-    public void printPartialOrderList(){
-        for(PartialOrder x:runtimestruct){
-            System.out.println("\n"+x.getId() +"\n"+x.getNotes() + "\n" + x.getQty() +"" +x.getAddons());
-        }
     }
 
     public boolean connect() {
@@ -99,7 +92,7 @@ public class ApplicationDemo {
         }
     }
 
-    public void updateorderlist (List ls){
+    public void updateorderlist (ArrayList <String> ls){
         DefaultListModel demoList = new DefaultListModel();
         demoList.addElement(ls);
         //TODO: try list of lists in future versions per cercare di avere spaziature oppure anche coppie product,price oppure usa table
@@ -111,53 +104,6 @@ public class ApplicationDemo {
         return rd.nextInt(51);
     }
 
-    //TODO:completa metodo inserimento richiamato da submit, per il momento hai creato una classe per contenere l'ordine che poi verrà iterato ed inserito nel db
-    public void addOrder(List ls, String nt, String arr, Boolean tw){
-        /*
-        for(Object prod: listorder){
-            try {
-                pst = con.prepareStatement("select * from product where name= ?");
-                pst.setString(1,prod.toString());
-                ResultSet rs = pst.executeQuery();
-                if(rs.next()){
-                    pst = con.prepareStatement("select * from pizza where name= ?");
-                    pst.setString(1,prod.toString());
-                    ResultSet rs2 = pst.executeQuery();
-                }
-            } catch (SQLException e) {
-                e.printStackTrace();
-            }
-            try {
-            pst = con.prepareStatement("INSERT INTO CONTAINSTPROD (orderid,productid,qty,note)" +
-                    "VALUES (?,?,?,?)");
-
-            }catch (SQLException e){
-            e.printStackTrace();
-
-            }
-        }
-        try{
-            pst = con.prepareStatement("insert into order(fromcustomer,ts,desiredtime,takeaway,numofprod,numofpizza,price,notes)" +
-                    " values(?,?,?,?,?,?,?,?)");
-            String idcustomer = (String) table2.getValueAt(1,0);
-            pst.setString(1,idcustomer);
-            DateTimeFormatter dtf = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
-            LocalDateTime now = LocalDateTime.now();
-            pst.setString(2,dtf.format(now));
-            pst.setString(3,arr);
-            pst.setBoolean(4,tw);
-            PreparedStatement numprodstm = con.prepareStatement("SELECT count(*) FROM" +
-                    "");
-            pst.executeUpdate();
-            System.out.println("Order inserted");
-        }catch(SQLException e){
-            e.printStackTrace();
-        }*/
-    }
-
-    /*init method per inizializzare fake "chiamata da parte del customer" scegliendo un numero random da 1 a 50(?)
-    richiama metodo connect per la connessione al database e setta anche il logo dell'azienda*/
-
     public void init(){
         //set enterprise icon
         ImageIcon iconlogo = new ImageIcon("logo.png");
@@ -168,14 +114,27 @@ public class ApplicationDemo {
         loadproductstb();
     }
 
+    //TODO:completa metodo inserimento richiamato da submit, per il momento hai creato una classe per contenere l'ordine che poi verrà iterato ed inserito nel db
+    public void addOrder(String nt, String arr, Boolean tw){
+
+        for(PartialOrder x:runtimestruct){
+
+        }
+
+
+        try {
+            pst = con.prepareStatement("INSERT INTO ");
+        }catch (SQLException e){
+            e.printStackTrace();
+        }
+
+
+    }
+
     public ApplicationDemo(){
         init();
         runtimestruct = new ArrayList<PartialOrder>();
         listorder = new ArrayList<String>();
-
-
-        //action listener
-
 
 
         table1.addMouseListener(new MouseAdapter() {
@@ -185,8 +144,48 @@ public class ApplicationDemo {
                 if (e.getClickCount() == 1) {
                     int row = table1.getSelectedRow();
                     PartialOrder neworder = new PartialOrder();
-                    //TODO:prova con element collection nome e prezzo, nome e prezzo ... (anche per table1) in future versions
-                    listorder.add(table1.getValueAt(row,1).toString());
+
+                    JTextField xField = new JTextField(40);
+                    JComboBox yField = new JComboBox();
+                    yField.addItem(1);
+                    yField.addItem(2);
+                    yField.addItem(3);
+                    yField.addItem(4);
+                    yField.addItem(5);
+                    //TODO: sistema questo combobox devi mettere i nomi degli ingredienti dopo averli "queryati" oppure puoi hardcodarli semplicemente ed anche se aggiungi un ingrediente modifichi la struttura aggiungendo l'elemento
+                    JComboBox zField = new JComboBox();
+                    zField.addItem("Patatine");
+                    zField.addItem("Funghi");
+                    zField.addItem("Prosciutto");
+                    zField.addItem("Crema spalmabile");
+                    zField.addItem("Porcini");
+                    JPanel myPanel = new JPanel();
+                    myPanel.add(new JLabel("Notes:"));
+                    myPanel.add(xField);
+                    myPanel.add(Box.createHorizontalStrut(15)); // a spacer
+                    myPanel.add(new JLabel("Quantity:"));
+                    myPanel.add(yField);
+                    myPanel.add(new JLabel("Addons"));
+                    myPanel.add(zField);
+                    //TODO: modifica sopra e sotto per far si che crei un pannellocard dal design e glielo setti qui anzichè crearlo tramite codice - EDIT CI HAI PROVATO NON SEMBRA FUNZIONARE LO DEVI CREARE TIPO RUNTIME IL PANEL
+                    //TODO: modifica il fatto che non sia corretto usare Jcombobox per selezione addons dato che così ne puoi selezionare solo uno
+                    JOptionPane.showConfirmDialog(null, myPanel,"Please Enter Notes, Addons and Quantities Values", JOptionPane.OK_OPTION);
+
+
+                    ArrayList <String> ls = new ArrayList<>();
+                    neworder.setNotes(xField.getText());
+                    neworder.setQty((Integer) yField.getItemAt(yField.getSelectedIndex()));
+                    neworder.setId(table1.getValueAt(row,0).toString());
+                    ls.add((String) zField.getItemAt(zField.getSelectedIndex()));
+                    neworder.setAddons(ls);
+                    String sldprodid = table1.getValueAt(row,1).toString();
+                    runtimestruct.add(neworder);
+
+                    for(PartialOrder x:runtimestruct){
+                        System.out.println("\n" +x.getId() + "\n" + x.getAddons() + "\n" +x.getQty() + "" +x.getNotes());
+                    }
+
+                    listorder.add(sldprodid);
                     System.out.println("questo è l'ordine" +listorder);
                     updateorderlist(listorder);
                 }
@@ -207,26 +206,24 @@ public class ApplicationDemo {
                     yField.addItem(3);
                     yField.addItem(4);
                     yField.addItem(5);
-                    JComboBox zField = new JComboBox();
-                    //TODO: sistema questo combobox devi mettere i nomi degli ingredienti dopo averli "queryati"
                     JPanel myPanel = new JPanel();
                     myPanel.add(new JLabel("Notes:"));
                     myPanel.add(xField);
                     myPanel.add(Box.createHorizontalStrut(15)); // a spacer
                     myPanel.add(new JLabel("Quantity:"));
                     myPanel.add(yField);
-                    //TODO: modifica sopra e sotto per far si che crei un pannellocard dal design e glielo setti qui anzichè crearlo tramite codice
+                    //TODO: modifica sopra e sotto per far si che crei un pannellocard dal design e glielo setti qui anzichè crearlo tramite codice - EDIT CI HAI PROVATO NON SEMBRA FUNZIONARE LO DEVI CREARE TIPO RUNTIME IL PANEL
                     JOptionPane.showConfirmDialog(null, myPanel,"Please Enter Notes and Quantities Values", JOptionPane.OK_OPTION);
-                    //System.out.println("Notes value: " + xField.getText());
-                    //System.out.println("Quantities value: " + yField.getItemAt(yField.getSelectedIndex()));
                     neworder.setNotes(xField.getText());
                     neworder.setQty((Integer) yField.getItemAt(yField.getSelectedIndex()));
                     neworder.setId(table3.getValueAt(row,0).toString());
-                    String sldprodid = table3.getValueAt(row,0).toString();
+                    String sldprodid = table3.getValueAt(row,1).toString();
                     runtimestruct.add(neworder);
-                    //TODO:prova con element collection nome e prezzo, nome e prezzo ... (anche per table1) in future versions
+                    for(PartialOrder x:runtimestruct){
+                        System.out.println("\n" +x.getId() + "\n" + x.getAddons() + "\n" +x.getQty() + "\n" +x.getNotes());
+                    }
                     listorder.add(sldprodid);
-                    System.out.println("questo è l'ordine" +listorder);
+                    System.out.println("questo è l'ordine\n" +listorder);
                     updateorderlist(listorder);
                 }
             }
@@ -270,8 +267,9 @@ public class ApplicationDemo {
                 String notes = ordernotes.getText();
                 String desarr = desiredArrivalOrder.getText();
                 Boolean takeaway = takeAwayRadioButton.isSelected();
-                System.out.println("" + notes +"\n" +desarr +"\n"+takeaway);
-                //addOrder(listorder,notes,desarr,takeaway);
+                System.out.println("\n" + notes +"\n" +desarr +"\n"+takeaway);
+                addOrder(notes,desarr,takeaway);
+                runtimestruct.removeAll(runtimestruct);
                 panellocard.removeAll();
                 panellocard.add(panellomain);
                 panellocard.repaint();
@@ -279,7 +277,6 @@ public class ApplicationDemo {
                 //TODO: fix passaggio non refresha la pagina main
             }
         });
-
     }
 
 }

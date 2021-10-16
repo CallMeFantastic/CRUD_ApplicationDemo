@@ -18,8 +18,9 @@ public class PartialOrder {
         this.notes = notes;
     }
 
-    public void setAddons(List<String> addons) {
-        this.addons = addons;
+    //TODO: handle quando passi una lista di stringhe
+    public void setAddons(List <String> s) {
+        this.addons = s;
     }
 
     public String getId() {
