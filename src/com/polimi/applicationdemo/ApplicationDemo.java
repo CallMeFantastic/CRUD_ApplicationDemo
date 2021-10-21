@@ -1,14 +1,19 @@
+package com.polimi.applicationdemo;
+
+import com.polimi.utils.PartialOrderPizza;
+import com.polimi.utils.PartialOrderProduct;
 import net.proteanit.sql.DbUtils;
 
 import javax.swing.*;
 import java.awt.event.*;
 import java.sql.*;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Random;
+import java.time.format.DateTimeFormatter;
+import java.time.LocalDateTime;
 
 public class ApplicationDemo {
-
+    private static JFrame frame;
     private JPanel panellomain;
     private JPanel panellouser;
     private JPanel panelloproduct;
@@ -26,14 +31,14 @@ public class ApplicationDemo {
     private Connection con;
     private PreparedStatement pst;
     private ArrayList listorder;
-    private ArrayList <PartialOrder> runtimestruct;
-    private String prod_notes;
-    private Integer prod_qty;
+    private ArrayList <PartialOrderPizza> runtimestructpizza;
+    private ArrayList <PartialOrderProduct> runtimestructproduct;
+
 
     //TODO: cambia i setString con relativi cast con i giusti set nei preparedstatement
 
     public static void main(String[] args) {
-        JFrame frame = new JFrame("CRUD_PIZZA");
+        frame = new JFrame("CRUD_PIZZA");
         frame.setContentPane(new ApplicationDemo().Main);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.pack();
@@ -114,26 +119,87 @@ public class ApplicationDemo {
         loadproductstb();
     }
 
-    //TODO:completa metodo inserimento richiamato da submit, per il momento hai creato una classe per contenere l'ordine che poi verrà iterato ed inserito nel db
-    public void addOrder(String nt, String arr, Boolean tw){
+    //TODO: Snellisci metodo, oltre a suddividere la roba potresti passare da 4 foreach a 2 facendo prima inserimento order ma senza alcuni valori ed aggiungerli dopo con un update
+    //TODO: gestisci in modo consono anche i try catch magari ne serve solo uno ad inizio metodo e basta a meno che tu non decida di generare diverse except
+    public void addOrder(String nt, String arr, Boolean tw) {
+        int numofprod = 0;
+        int numofpizza = 0;
+        float price = 0.0F;
 
-        for(PartialOrder x:runtimestruct){
-
+        for (PartialOrderProduct x : runtimestructproduct) {
+            try {
+                pst = con.prepareStatement("SELECT id,price from product where name=?",ResultSet.TYPE_SCROLL_SENSITIVE, ResultSet.CONCUR_UPDATABLE);
+                pst.setString(1, x.getName());
+                ResultSet rs = pst.executeQuery();
+                while (rs.next()) {
+                    numofprod = numofprod + x.getQty();
+                    price = price + rs.getFloat("PRICE") * x.getQty();
+                    }
+            } catch (SQLException e){
+                e.printStackTrace();
+            }
         }
-
-
+        for (PartialOrderPizza x : runtimestructpizza){
+            try {
+                pst = con.prepareStatement("SELECT pizzaid,price from pizza where name=?",ResultSet.TYPE_SCROLL_SENSITIVE,ResultSet.CONCUR_UPDATABLE);
+                pst.setString(1, x.getName());
+                ResultSet rs = pst.executeQuery();
+                while (rs.next()) {
+                    numofpizza = numofpizza + x.getQty();
+                    System.out.println("il numero di pizze è:"+numofpizza + "\n");
+                    price = price + rs.getFloat("PRICE") * x.getQty();
+                    System.out.println("Il price attuale è: "+price +"\n");
+                }
+            } catch (SQLException e){
+                e.printStackTrace();
+            }
+        }
         try {
-            pst = con.prepareStatement("INSERT INTO ");
-        }catch (SQLException e){
+            DateTimeFormatter dtf = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
+            LocalDateTime now = LocalDateTime.now();
+            pst = con.prepareStatement("INSERT into customerorder (fromcustomer,ts,desiredtime,takeaway,numofprod,numofpizza,price,notes) values (?,?,?,?,?,?,?,?)", Statement.RETURN_GENERATED_KEYS);
+            pst.setInt(1, (Integer) table2.getValueAt(0,0));
+            pst.setString(2, dtf.format(now));
+            pst.setString(3, arr);
+            pst.setBoolean(4,tw);
+            pst.setInt(5,numofprod);
+            pst.setInt(6,numofpizza);
+            pst.setDouble(7,price);
+            pst.setString(8,nt);
+            pst.executeUpdate();
+            ResultSet rs = pst.getGeneratedKeys();
+            rs.next();
+            int orderid = rs.getInt(1);
+            for (PartialOrderProduct x:runtimestructproduct) {
+                pst = con.prepareStatement("INSERT INTO containsprod (orderid,productid,qty,note) values (?,?,?,?)");
+                pst.setInt(1,orderid);
+                pst.setInt(2,Integer.valueOf(x.getId()));
+                pst.setInt(3,x.getQty());
+                pst.setString(4,x.getNotes());
+                pst.executeUpdate();
+            }
+            for (PartialOrderPizza x:runtimestructpizza) {
+                pst = con.prepareStatement("INSERT INTO containspizza (orderid,pizzaid,addon1,addon2,addon3,qty,note) values (?,?,?,?,?,?,?)");
+                pst.setInt(1,orderid);
+                pst.setInt(2,Integer.valueOf(x.getId()));
+                pst.setString(3,x.getAddons().get(0));
+                //TODO: fix multiple addon that can be null, il problema è che facendo get sull'Arraylist anzichè tornare null ti da un errore out of index
+                pst.setString(4,"");
+                pst.setString(5,"");
+                pst.setInt(6,x.getQty());
+                pst.setString(7,x.getNotes());
+                pst.executeUpdate();
+            }
+        } catch (SQLException e) {
             e.printStackTrace();
         }
-
 
     }
 
     public ApplicationDemo(){
-        init();
-        runtimestruct = new ArrayList<PartialOrder>();
+        runtimestructpizza = new ArrayList<PartialOrderPizza>();
+        runtimestructproduct = new ArrayList<PartialOrderProduct>();
+
         listorder = new ArrayList<String>();
 
 
@@ -143,7 +209,7 @@ public class ApplicationDemo {
                 super.mouseClicked(e);
                 if (e.getClickCount() == 1) {
                     int row = table1.getSelectedRow();
-                    PartialOrder neworder = new PartialOrder();
+                    PartialOrderPizza neworder = new PartialOrderPizza();
 
                     JTextField xField = new JTextField(40);
                     JComboBox yField = new JComboBox();
@@ -176,17 +242,19 @@ public class ApplicationDemo {
                     neworder.setNotes(xField.getText());
                     neworder.setQty((Integer) yField.getItemAt(yField.getSelectedIndex()));
                     neworder.setId(table1.getValueAt(row,0).toString());
+                    neworder.setName(table1.getValueAt(row,1).toString());
                     ls.add((String) zField.getItemAt(zField.getSelectedIndex()));
                     neworder.setAddons(ls);
                     String sldprodid = table1.getValueAt(row,1).toString();
-                    runtimestruct.add(neworder);
+                    System.out.println("Id: "+neworder.getId() + "\n Name: "+neworder.getName() + "\n Qty" + neworder.getQty() + "\n Notes:" + neworder.getNotes() + "\n Addon:" + neworder.getAddons().get(0));
+                    runtimestructpizza.add(neworder);
 
-                    for(PartialOrder x:runtimestruct){
+                    /*for(PartialOrderPizza x:runtimestructpizza){
                         System.out.println("\n" +x.getId() + "\n" + x.getAddons() + "\n" +x.getQty() + "" +x.getNotes());
-                    }
+                    }*/
 
                     listorder.add(sldprodid);
-                    System.out.println("questo è l'ordine" +listorder);
+                    //System.out.println("questo è l'ordine" +listorder);
                     updateorderlist(listorder);
                 }
             }
@@ -197,8 +265,9 @@ public class ApplicationDemo {
             public void mouseClicked(MouseEvent e) {
                 super.mouseClicked(e);
                 if (e.getClickCount() == 1) {
-                    PartialOrder neworder = new PartialOrder();
+                    PartialOrderProduct neworder = new PartialOrderProduct();
                     int row = table3.getSelectedRow();
+
                     JTextField xField = new JTextField(40);
                     JComboBox yField = new JComboBox();
                     yField.addItem(1);
@@ -214,20 +283,24 @@ public class ApplicationDemo {
                     myPanel.add(yField);
                     //TODO: modifica sopra e sotto per far si che crei un pannellocard dal design e glielo setti qui anzichè crearlo tramite codice - EDIT CI HAI PROVATO NON SEMBRA FUNZIONARE LO DEVI CREARE TIPO RUNTIME IL PANEL
                     JOptionPane.showConfirmDialog(null, myPanel,"Please Enter Notes and Quantities Values", JOptionPane.OK_OPTION);
+
                     neworder.setNotes(xField.getText());
                     neworder.setQty((Integer) yField.getItemAt(yField.getSelectedIndex()));
                     neworder.setId(table3.getValueAt(row,0).toString());
+                    neworder.setName(table3.getValueAt(row,1).toString());
                     String sldprodid = table3.getValueAt(row,1).toString();
-                    runtimestruct.add(neworder);
-                    for(PartialOrder x:runtimestruct){
-                        System.out.println("\n" +x.getId() + "\n" + x.getAddons() + "\n" +x.getQty() + "\n" +x.getNotes());
-                    }
+                    runtimestructproduct.add(neworder);
+
+                    /*for(PartialOrderProduct x:runtimestructproduct){
+                        System.out.println("\n" +x.getId() + "\n" +x.getQty() + "\n" +x.getNotes());
+                    }*/
                     listorder.add(sldprodid);
-                    System.out.println("questo è l'ordine\n" +listorder);
+                    //System.out.println("questo è l'ordine\n" +listorder);
                     updateorderlist(listorder);
                 }
             }
         });
+
         //TODO: fix that text disappears if you start clicking both textfields ordernotes and desiredarrivaltextfield in future versions
         ordernotes.addFocusListener(new FocusAdapter() {
             @Override
@@ -264,17 +337,25 @@ public class ApplicationDemo {
         submitorder.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                String notes = ordernotes.getText();
-                String desarr = desiredArrivalOrder.getText();
-                Boolean takeaway = takeAwayRadioButton.isSelected();
-                System.out.println("\n" + notes +"\n" +desarr +"\n"+takeaway);
+                String notes;
+                String desarr;
+                Boolean takeaway;
+                takeaway = takeAwayRadioButton.isSelected();
+                if(ordernotes.getText() != "Notes")
+                    notes = ordernotes.getText();
+                else
+                    notes = null;
+                if(desiredArrivalOrder.getText() != "Desired arrival time")
+                    desarr = desiredArrivalOrder.getText();
+                else
+                    desarr = null;
                 addOrder(notes,desarr,takeaway);
-                runtimestruct.removeAll(runtimestruct);
-                panellocard.removeAll();
-                panellocard.add(panellomain);
-                panellocard.repaint();
-                panellocard.revalidate();
-                //TODO: fix passaggio non refresha la pagina main
+                runtimestructpizza.removeAll(runtimestructpizza);
+                runtimestructproduct.removeAll(runtimestructproduct);
+                frame.setContentPane(new ApplicationDemo().Main);
+                frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+                frame.pack();
+                frame.setVisible(true);
             }
         });
     }

@@ -1,7 +1,10 @@
+package com.polimi.utils;
+
 import java.util.List;
 
-public class PartialOrder {
+public class PartialOrderPizza {
     private String id;
+    private String name;
     private int qty;
     private String notes;
     private List <String> addons;
@@ -37,5 +40,12 @@ public class PartialOrder {
 
     public List<String> getAddons() {
         return addons;
+    }
+
+    public String getName() {
+        return name;
+    }
+    public void setName(String name) {
+        this.name = name;
     }
 }
