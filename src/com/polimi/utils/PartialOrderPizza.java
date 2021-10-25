@@ -9,6 +9,8 @@ public class PartialOrderPizza {
     private String notes;
     private List <String> addons;
 
+    //TODO: SISTEMA CLASSE COME PRIMA COSA SENNO'  NON PUOI ANDARE AVANTI
+
     public void setId(String id) {
         this.id = id;
     }
@@ -21,9 +23,12 @@ public class PartialOrderPizza {
         this.notes = notes;
     }
 
-    //TODO: handle quando passi una lista di stringhe
     public void setAddons(List <String> s) {
         this.addons = s;
+    }
+
+    public void addAddons( String s){
+        addons.add(s);
     }
 
     public String getId() {

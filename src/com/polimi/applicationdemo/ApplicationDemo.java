@@ -33,9 +33,10 @@ public class ApplicationDemo {
     private ArrayList listorder;
     private ArrayList <PartialOrderPizza> runtimestructpizza;
     private ArrayList <PartialOrderProduct> runtimestructproduct;
+    private ArrayList <JComboBox> combobox;
 
+    //TODO: valuta se migliorare il modo in cui sono definite alcune variabili, se farle private all'interno del metodo stesso oppure globali della clas
 
-    //TODO: cambia i setString con relativi cast con i giusti set nei preparedstatement
 
     public static void main(String[] args) {
         frame = new JFrame("CRUD_PIZZA");
@@ -51,11 +52,8 @@ public class ApplicationDemo {
             con = DriverManager.getConnection("jdbc:mysql://localhost/pizzamgt", "root", "");
             System.out.println("Successfully connected via jdbc Driver to the server    \n");
             return true;
-        } catch (SQLException throwables) {
+        } catch (SQLException| ClassNotFoundException throwables) {
             throwables.printStackTrace();
-            return false;
-        } catch (ClassNotFoundException e) {
-            e.printStackTrace();
             return false;
         }
     }
@@ -65,10 +63,8 @@ public class ApplicationDemo {
             pst = con.prepareStatement("select * from pizza");
             ResultSet rs = pst.executeQuery();
             table1.setModel(DbUtils.resultSetToTableModel(rs));
-            //abbiamo importato mediante dipendenza una libreria esterna rs2xml.jar
-            //che presenta il metodo DbUtils per creare e riempire dinamicamente una tabella Jtable.
-        }catch(SQLException e2){
-            e2.printStackTrace();
+        }catch(SQLException e){
+            e.printStackTrace();
         }
     }
 
@@ -78,10 +74,8 @@ public class ApplicationDemo {
             pst.setString(1,idcustomer);
             ResultSet rs = pst.executeQuery();
             table2.setModel(DbUtils.resultSetToTableModel(rs));
-            //abbiamo importato mediante dipendenza una libreria esterna rs2xml.jar
-            //che presenta il metodo DbUtils per creare e riempire dinamicamente una tabella Jtable.
-        }catch(SQLException e2){
-            e2.printStackTrace();
+        }catch(SQLException e){
+            e.printStackTrace();
         }
     }
 
@@ -90,10 +84,8 @@ public class ApplicationDemo {
             pst = con.prepareStatement("select * from product");
             ResultSet rs = pst.executeQuery();
             table3.setModel(DbUtils.resultSetToTableModel(rs));
-            //abbiamo importato mediante dipendenza una libreria esterna rs2xml.jar
-            //che presenta il metodo DbUtils per creare e riempire dinamicamente una tabella Jtable.
-        }catch(SQLException e2){
-            e2.printStackTrace();
+        }catch(SQLException e){
+            e.printStackTrace();
         }
     }
 
@@ -119,58 +111,38 @@ public class ApplicationDemo {
         loadproductstb();
     }
 
-    //TODO: Snellisci metodo, oltre a suddividere la roba potresti passare da 4 foreach a 2 facendo prima inserimento order ma senza alcuni valori ed aggiungerli dopo con un update
-    //TODO: gestisci in modo consono anche i try catch magari ne serve solo uno ad inizio metodo e basta a meno che tu non decida di generare diverse except
     public void addOrder(String nt, String arr, Boolean tw) {
         int numofprod = 0;
         int numofpizza = 0;
         float price = 0.0F;
-
-        for (PartialOrderProduct x : runtimestructproduct) {
-            try {
-                pst = con.prepareStatement("SELECT id,price from product where name=?",ResultSet.TYPE_SCROLL_SENSITIVE, ResultSet.CONCUR_UPDATABLE);
-                pst.setString(1, x.getName());
-                ResultSet rs = pst.executeQuery();
-                while (rs.next()) {
-                    numofprod = numofprod + x.getQty();
-                    price = price + rs.getFloat("PRICE") * x.getQty();
-                    }
-            } catch (SQLException e){
-                e.printStackTrace();
-            }
-        }
-        for (PartialOrderPizza x : runtimestructpizza){
-            try {
-                pst = con.prepareStatement("SELECT pizzaid,price from pizza where name=?",ResultSet.TYPE_SCROLL_SENSITIVE,ResultSet.CONCUR_UPDATABLE);
-                pst.setString(1, x.getName());
-                ResultSet rs = pst.executeQuery();
-                while (rs.next()) {
-                    numofpizza = numofpizza + x.getQty();
-                    System.out.println("il numero di pizze è:"+numofpizza + "\n");
-                    price = price + rs.getFloat("PRICE") * x.getQty();
-                    System.out.println("Il price attuale è: "+price +"\n");
-                }
-            } catch (SQLException e){
-                e.printStackTrace();
-            }
-        }
-        try {
-            DateTimeFormatter dtf = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
-            LocalDateTime now = LocalDateTime.now();
+        DateTimeFormatter dtf = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
+        LocalDateTime now = LocalDateTime.now();
+        try{
+            con.setAutoCommit(false);
+            System.out.println("Partial insertion into customerorder for the given order together with containsprod & pizza\n");
             pst = con.prepareStatement("INSERT into customerorder (fromcustomer,ts,desiredtime,takeaway,numofprod,numofpizza,price,notes) values (?,?,?,?,?,?,?,?)", Statement.RETURN_GENERATED_KEYS);
             pst.setInt(1, (Integer) table2.getValueAt(0,0));
             pst.setString(2, dtf.format(now));
             pst.setString(3, arr);
             pst.setBoolean(4,tw);
-            pst.setInt(5,numofprod);
-            pst.setInt(6,numofpizza);
-            pst.setDouble(7,price);
+            pst.setInt(5,0);
+            pst.setInt(6,0);
+            pst.setDouble(7,0.0F);
             pst.setString(8,nt);
             pst.executeUpdate();
             ResultSet rs = pst.getGeneratedKeys();
             rs.next();
             int orderid = rs.getInt(1);
-            for (PartialOrderProduct x:runtimestructproduct) {
+
+            //calculate numofprod the corresponding price and insert into containsprod
+            for (PartialOrderProduct x : runtimestructproduct) {
+                pst = con.prepareStatement("SELECT id,price from product where name=?",ResultSet.TYPE_SCROLL_SENSITIVE, ResultSet.CONCUR_UPDATABLE);
+                pst.setString(1, x.getName());
+                rs = pst.executeQuery();
+                while (rs.next()) {
+                    numofprod = numofprod + x.getQty();
+                    price = price + rs.getFloat("PRICE") * x.getQty();
+                    }
                 pst = con.prepareStatement("INSERT INTO containsprod (orderid,productid,qty,note) values (?,?,?,?)");
                 pst.setInt(1,orderid);
                 pst.setInt(2,Integer.valueOf(x.getId()));
@@ -178,7 +150,15 @@ public class ApplicationDemo {
                 pst.setString(4,x.getNotes());
                 pst.executeUpdate();
             }
-            for (PartialOrderPizza x:runtimestructpizza) {
+            //calculate numofpizza the corresponding price and insert into containspizza
+            for (PartialOrderPizza x : runtimestructpizza){
+                pst = con.prepareStatement("SELECT pizzaid,price from pizza where name=?",ResultSet.TYPE_SCROLL_SENSITIVE,ResultSet.CONCUR_UPDATABLE);
+                pst.setString(1, x.getName());
+                rs = pst.executeQuery();
+                while (rs.next()) {
+                    numofpizza = numofpizza + x.getQty();
+                    price = price + rs.getFloat("PRICE") * x.getQty();
+                }
                 pst = con.prepareStatement("INSERT INTO containspizza (orderid,pizzaid,addon1,addon2,addon3,qty,note) values (?,?,?,?,?,?,?)");
                 pst.setInt(1,orderid);
                 pst.setInt(2,Integer.valueOf(x.getId()));
@@ -190,49 +170,80 @@ public class ApplicationDemo {
                 pst.setString(7,x.getNotes());
                 pst.executeUpdate();
             }
+            System.out.println("Completed insertion into customerorder with the final tuple\n");
+            pst = con.prepareStatement("UPDATE customerorder SET numofprod = ?, numofpizza = ?, price = ? WHERE id = ?");
+            pst.setInt(1,numofprod);
+            pst.setInt(2,numofpizza);
+            pst.setFloat(3,price);
+            pst.setInt(4,orderid);
+            pst.executeUpdate();
+            con.commit();
         } catch (SQLException e) {
             e.printStackTrace();
+            try {
+                System.out.println("Something went wrong during query execution, rolling back insertions");
+                con.rollback();
+            } catch (SQLException ex) {
+                ex.printStackTrace();
+            }
         }
-
     }
 
     public ApplicationDemo(){
         runtimestructpizza = new ArrayList<PartialOrderPizza>();
         runtimestructproduct = new ArrayList<PartialOrderProduct>();
-
         listorder = new ArrayList<String>();
-
+        combobox = new ArrayList<JComboBox>();
+        init();
 
         table1.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
-                super.mouseClicked(e);
+                //super.mouseClicked(e);
                 if (e.getClickCount() == 1) {
                     int row = table1.getSelectedRow();
                     PartialOrderPizza neworder = new PartialOrderPizza();
 
-                    JTextField xField = new JTextField(40);
+                    JTextField xField = new JTextField(20);
                     JComboBox yField = new JComboBox();
                     yField.addItem(1);
                     yField.addItem(2);
                     yField.addItem(3);
                     yField.addItem(4);
                     yField.addItem(5);
-                    //TODO: sistema questo combobox devi mettere i nomi degli ingredienti dopo averli "queryati" oppure puoi hardcodarli semplicemente ed anche se aggiungi un ingrediente modifichi la struttura aggiungendo l'elemento
+
                     JComboBox zField = new JComboBox();
-                    zField.addItem("Patatine");
-                    zField.addItem("Funghi");
-                    zField.addItem("Prosciutto");
-                    zField.addItem("Crema spalmabile");
-                    zField.addItem("Porcini");
+                    JComboBox pField = new JComboBox();
+                    JComboBox tField = new JComboBox();
+                    combobox.add(zField);
+                    combobox.add(pField);
+                    combobox.add(tField);
+                    try {
+                        pst = con.prepareStatement("SELECT * from ingredient",ResultSet.TYPE_SCROLL_SENSITIVE, ResultSet.CONCUR_UPDATABLE);
+                        ResultSet rs = pst.executeQuery();
+                        for(int i=0;i<3;i++){
+                            combobox.get(i).addItem("");
+                            while(rs.next()){
+                                combobox.get(i).addItem(rs.getString("name"));
+                            }
+                            rs.beforeFirst();
+                        }
+                    } catch (SQLException ex) {
+                        ex.printStackTrace();
+                    }
                     JPanel myPanel = new JPanel();
                     myPanel.add(new JLabel("Notes:"));
                     myPanel.add(xField);
                     myPanel.add(Box.createHorizontalStrut(15)); // a spacer
                     myPanel.add(new JLabel("Quantity:"));
                     myPanel.add(yField);
-                    myPanel.add(new JLabel("Addons"));
+                    myPanel.add(Box.createVerticalStrut(15));
+                    myPanel.add(new JLabel("Addons1"));
                     myPanel.add(zField);
+                    myPanel.add(new JLabel("Addons2"));
+                    myPanel.add(pField);
+                    myPanel.add(new JLabel("Addons3"));
+                    myPanel.add(tField);
                     //TODO: modifica sopra e sotto per far si che crei un pannellocard dal design e glielo setti qui anzichè crearlo tramite codice - EDIT CI HAI PROVATO NON SEMBRA FUNZIONARE LO DEVI CREARE TIPO RUNTIME IL PANEL
                     //TODO: modifica il fatto che non sia corretto usare Jcombobox per selezione addons dato che così ne puoi selezionare solo uno
                     JOptionPane.showConfirmDialog(null, myPanel,"Please Enter Notes, Addons and Quantities Values", JOptionPane.OK_OPTION);
@@ -244,17 +255,15 @@ public class ApplicationDemo {
                     neworder.setId(table1.getValueAt(row,0).toString());
                     neworder.setName(table1.getValueAt(row,1).toString());
                     ls.add((String) zField.getItemAt(zField.getSelectedIndex()));
-                    neworder.setAddons(ls);
+                    ls.add((String) tField.getItemAt(zField.getSelectedIndex()));
+                    ls.add((String) pField.getItemAt(zField.getSelectedIndex()));
+                    neworder.addAddons(ls.get(0));
+                    neworder.addAddons(ls.get(1));
+                    neworder.addAddons(ls.get(2));
                     String sldprodid = table1.getValueAt(row,1).toString();
-                    System.out.println("Id: "+neworder.getId() + "\n Name: "+neworder.getName() + "\n Qty" + neworder.getQty() + "\n Notes:" + neworder.getNotes() + "\n Addon:" + neworder.getAddons().get(0));
+                    System.out.println("Id: "+neworder.getId() + "\n Name: "+neworder.getName() + "\n Qty:" + neworder.getQty() + "\n Notes:" + neworder.getNotes() + "\n Addon:" + neworder.getAddons().get(0) + "\n Addon:" + neworder.getAddons().get(1) + "\n Addon:" + neworder.getAddons().get(2));
                     runtimestructpizza.add(neworder);
-
-                    /*for(PartialOrderPizza x:runtimestructpizza){
-                        System.out.println("\n" +x.getId() + "\n" + x.getAddons() + "\n" +x.getQty() + "" +x.getNotes());
-                    }*/
-
                     listorder.add(sldprodid);
-                    //System.out.println("questo è l'ordine" +listorder);
                     updateorderlist(listorder);
                 }
             }
@@ -344,11 +353,11 @@ public class ApplicationDemo {
                 if(ordernotes.getText() != "Notes")
                     notes = ordernotes.getText();
                 else
-                    notes = null;
+                    notes = "";
                 if(desiredArrivalOrder.getText() != "Desired arrival time")
                     desarr = desiredArrivalOrder.getText();
                 else
-                    desarr = null;
+                    desarr = "";
                 addOrder(notes,desarr,takeaway);
                 runtimestructpizza.removeAll(runtimestructpizza);
                 runtimestructproduct.removeAll(runtimestructproduct);
