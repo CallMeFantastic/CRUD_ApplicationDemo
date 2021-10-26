@@ -1,5 +1,6 @@
 package com.polimi.utils;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class PartialOrderPizza {
@@ -7,9 +8,15 @@ public class PartialOrderPizza {
     private String name;
     private int qty;
     private String notes;
-    private List <String> addons;
+    private ArrayList<String> addons;
 
     //TODO: SISTEMA CLASSE COME PRIMA COSA SENNO'  NON PUOI ANDARE AVANTI
+
+    // La lista necessitava di essere inizializzata ecco dunque che hai creato un costruttore che inizializzasse l'attributo quando invocata la creazione dell'oggetto
+    public PartialOrderPizza(){
+        addons = new ArrayList<String>();
+    }
+
 
     public void setId(String id) {
         this.id = id;
@@ -23,7 +30,7 @@ public class PartialOrderPizza {
         this.notes = notes;
     }
 
-    public void setAddons(List <String> s) {
+    public void setAddons(ArrayList <String> s) {
         this.addons = s;
     }
 

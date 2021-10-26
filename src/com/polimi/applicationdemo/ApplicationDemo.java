@@ -36,7 +36,10 @@ public class ApplicationDemo {
     private ArrayList <JComboBox> combobox;
 
     //TODO: valuta se migliorare il modo in cui sono definite alcune variabili, se farle private all'interno del metodo stesso oppure globali della clas
-
+    //TODO: controllo su inserimento come notes, desired arrival time ecc.ecc.
+    //TODO: aggiungi cancellazione prodotto dalla runtimestruct in caso di errore e dunque anche aggiunta del pulsante "cancella" con relativo actionlist
+    //TODO: gestione nellla JOptionPane se clicchi no fa comunque l'inserimento dell'ordine in tutto, dalla lista alle runtimestruct
+    //TODO: pannelocard gestione user con modifica dati ecc.ecc.
 
     public static void main(String[] args) {
         frame = new JFrame("CRUD_PIZZA");
@@ -163,9 +166,8 @@ public class ApplicationDemo {
                 pst.setInt(1,orderid);
                 pst.setInt(2,Integer.valueOf(x.getId()));
                 pst.setString(3,x.getAddons().get(0));
-                //TODO: fix multiple addon that can be null, il problema è che facendo get sull'Arraylist anzichè tornare null ti da un errore out of index
-                pst.setString(4,"");
-                pst.setString(5,"");
+                pst.setString(4,x.getAddons().get(1));
+                pst.setString(5,x.getAddons().get(2));
                 pst.setInt(6,x.getQty());
                 pst.setString(7,x.getNotes());
                 pst.executeUpdate();
@@ -189,11 +191,35 @@ public class ApplicationDemo {
         }
     }
 
+    public void createDynamicComboBox(){
+        combobox = new ArrayList<JComboBox>();
+
+        JComboBox zField = new JComboBox();
+        JComboBox pField = new JComboBox();
+        JComboBox tField = new JComboBox();
+        combobox.add(zField);
+        combobox.add(pField);
+        combobox.add(tField);
+        try {
+            pst = con.prepareStatement("SELECT * from ingredient",ResultSet.TYPE_SCROLL_SENSITIVE, ResultSet.CONCUR_UPDATABLE);
+            ResultSet rs = pst.executeQuery();
+            for(int i=0;i<3;i++){
+                combobox.get(i).addItem("");
+                while(rs.next()){
+                    combobox.get(i).addItem(rs.getString("name"));
+                }
+                rs.beforeFirst();
+            }
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+        }
+    }
+
+
     public ApplicationDemo(){
         runtimestructpizza = new ArrayList<PartialOrderPizza>();
         runtimestructproduct = new ArrayList<PartialOrderProduct>();
         listorder = new ArrayList<String>();
-        combobox = new ArrayList<JComboBox>();
         init();
 
         table1.addMouseListener(new MouseAdapter() {
@@ -212,25 +238,8 @@ public class ApplicationDemo {
                     yField.addItem(4);
                     yField.addItem(5);
 
-                    JComboBox zField = new JComboBox();
-                    JComboBox pField = new JComboBox();
-                    JComboBox tField = new JComboBox();
-                    combobox.add(zField);
-                    combobox.add(pField);
-                    combobox.add(tField);
-                    try {
-                        pst = con.prepareStatement("SELECT * from ingredient",ResultSet.TYPE_SCROLL_SENSITIVE, ResultSet.CONCUR_UPDATABLE);
-                        ResultSet rs = pst.executeQuery();
-                        for(int i=0;i<3;i++){
-                            combobox.get(i).addItem("");
-                            while(rs.next()){
-                                combobox.get(i).addItem(rs.getString("name"));
-                            }
-                            rs.beforeFirst();
-                        }
-                    } catch (SQLException ex) {
-                        ex.printStackTrace();
-                    }
+                    //TODO: crea un metodo da richiamare che gestisca la cosa delle combobox
+                    createDynamicComboBox();
                     JPanel myPanel = new JPanel();
                     myPanel.add(new JLabel("Notes:"));
                     myPanel.add(xField);
@@ -239,13 +248,12 @@ public class ApplicationDemo {
                     myPanel.add(yField);
                     myPanel.add(Box.createVerticalStrut(15));
                     myPanel.add(new JLabel("Addons1"));
-                    myPanel.add(zField);
+                    myPanel.add(combobox.get(0));
                     myPanel.add(new JLabel("Addons2"));
-                    myPanel.add(pField);
+                    myPanel.add(combobox.get(1));
                     myPanel.add(new JLabel("Addons3"));
-                    myPanel.add(tField);
+                    myPanel.add(combobox.get(2));
                     //TODO: modifica sopra e sotto per far si che crei un pannellocard dal design e glielo setti qui anzichè crearlo tramite codice - EDIT CI HAI PROVATO NON SEMBRA FUNZIONARE LO DEVI CREARE TIPO RUNTIME IL PANEL
-                    //TODO: modifica il fatto che non sia corretto usare Jcombobox per selezione addons dato che così ne puoi selezionare solo uno
                     JOptionPane.showConfirmDialog(null, myPanel,"Please Enter Notes, Addons and Quantities Values", JOptionPane.OK_OPTION);
 
 
@@ -254,9 +262,9 @@ public class ApplicationDemo {
                     neworder.setQty((Integer) yField.getItemAt(yField.getSelectedIndex()));
                     neworder.setId(table1.getValueAt(row,0).toString());
                     neworder.setName(table1.getValueAt(row,1).toString());
-                    ls.add((String) zField.getItemAt(zField.getSelectedIndex()));
-                    ls.add((String) tField.getItemAt(zField.getSelectedIndex()));
-                    ls.add((String) pField.getItemAt(zField.getSelectedIndex()));
+                    ls.add((String) combobox.get(0).getItemAt(combobox.get(0).getSelectedIndex()));
+                    ls.add((String) combobox.get(1).getItemAt(combobox.get(1).getSelectedIndex()));
+                    ls.add((String) combobox.get(2).getItemAt(combobox.get(2).getSelectedIndex()));
                     neworder.addAddons(ls.get(0));
                     neworder.addAddons(ls.get(1));
                     neworder.addAddons(ls.get(2));
@@ -265,6 +273,7 @@ public class ApplicationDemo {
                     runtimestructpizza.add(neworder);
                     listorder.add(sldprodid);
                     updateorderlist(listorder);
+                    combobox.removeAll(combobox);
                 }
             }
         });
@@ -272,7 +281,7 @@ public class ApplicationDemo {
         table3.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
-                super.mouseClicked(e);
+                //super.mouseClicked(e);
                 if (e.getClickCount() == 1) {
                     PartialOrderProduct neworder = new PartialOrderProduct();
                     int row = table3.getSelectedRow();
@@ -300,11 +309,7 @@ public class ApplicationDemo {
                     String sldprodid = table3.getValueAt(row,1).toString();
                     runtimestructproduct.add(neworder);
 
-                    /*for(PartialOrderProduct x:runtimestructproduct){
-                        System.out.println("\n" +x.getId() + "\n" +x.getQty() + "\n" +x.getNotes());
-                    }*/
                     listorder.add(sldprodid);
-                    //System.out.println("questo è l'ordine\n" +listorder);
                     updateorderlist(listorder);
                 }
             }
@@ -350,14 +355,27 @@ public class ApplicationDemo {
                 String desarr;
                 Boolean takeaway;
                 takeaway = takeAwayRadioButton.isSelected();
-                if(ordernotes.getText() != "Notes")
+
+                //TODO: sistema qui
+                notes = ordernotes.getText();
+                if (notes == "Notes"){
+                    notes = " ";
+                    System.out.println("eccomiii:"+notes);
+                }
+                desarr = desiredArrivalOrder.getText();
+                if(desarr == "Desired arrival time"){
+                    desarr = " ";
+                }
+
+                System.out.println(notes + "\n" + desarr);
+                /*if(ordernotes.getText() != "Notes")
                     notes = ordernotes.getText();
                 else
                     notes = "";
                 if(desiredArrivalOrder.getText() != "Desired arrival time")
                     desarr = desiredArrivalOrder.getText();
                 else
-                    desarr = "";
+                    desarr = "";*/
                 addOrder(notes,desarr,takeaway);
                 runtimestructpizza.removeAll(runtimestructpizza);
                 runtimestructproduct.removeAll(runtimestructproduct);
