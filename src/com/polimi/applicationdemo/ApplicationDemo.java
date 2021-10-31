@@ -238,7 +238,6 @@ public class ApplicationDemo {
                     yField.addItem(4);
                     yField.addItem(5);
 
-                    //TODO: crea un metodo da richiamare che gestisca la cosa delle combobox
                     createDynamicComboBox();
                     JPanel myPanel = new JPanel();
                     myPanel.add(new JLabel("Notes:"));
@@ -315,12 +314,11 @@ public class ApplicationDemo {
             }
         });
 
-        //TODO: fix that text disappears if you start clicking both textfields ordernotes and desiredarrivaltextfield in future versions
         ordernotes.addFocusListener(new FocusAdapter() {
             @Override
             public void focusGained(FocusEvent e) {
                 super.focusGained(e);
-                ordernotes.setText("");
+                ordernotes.setText(null);
             }
 
             @Override
@@ -336,7 +334,7 @@ public class ApplicationDemo {
             @Override
             public void focusGained(FocusEvent e) {
                 super.focusGained(e);
-                desiredArrivalOrder.setText("");
+                desiredArrivalOrder.setText(null);
             }
 
             @Override
@@ -355,27 +353,14 @@ public class ApplicationDemo {
                 String desarr;
                 Boolean takeaway;
                 takeaway = takeAwayRadioButton.isSelected();
-
-                //TODO: sistema qui
                 notes = ordernotes.getText();
-                if (notes == "Notes"){
-                    notes = " ";
-                    System.out.println("eccomiii:"+notes);
+                if (notes.equals("Notes")){
+                    notes = null;
                 }
                 desarr = desiredArrivalOrder.getText();
-                if(desarr == "Desired arrival time"){
-                    desarr = " ";
+                if(desarr.equals("Desired arrival time")){
+                    desarr = null;
                 }
-
-                System.out.println(notes + "\n" + desarr);
-                /*if(ordernotes.getText() != "Notes")
-                    notes = ordernotes.getText();
-                else
-                    notes = "";
-                if(desiredArrivalOrder.getText() != "Desired arrival time")
-                    desarr = desiredArrivalOrder.getText();
-                else
-                    desarr = "";*/
                 addOrder(notes,desarr,takeaway);
                 runtimestructpizza.removeAll(runtimestructpizza);
                 runtimestructproduct.removeAll(runtimestructproduct);
