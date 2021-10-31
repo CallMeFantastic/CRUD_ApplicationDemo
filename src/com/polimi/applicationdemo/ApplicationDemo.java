@@ -28,6 +28,8 @@ public class ApplicationDemo {
     private JTextField ordernotes;
     private JRadioButton takeAwayRadioButton;
     private JTextField desiredArrivalOrder;
+    private JButton DELETELASTINSERTIONButton;
+    private JButton DELETEPRODUCTButton;
     private Connection con;
     private PreparedStatement pst;
     private ArrayList listorder;
@@ -37,8 +39,6 @@ public class ApplicationDemo {
 
     //TODO: valuta se migliorare il modo in cui sono definite alcune variabili, se farle private all'interno del metodo stesso oppure globali della clas
     //TODO: controllo su inserimento come notes, desired arrival time ecc.ecc.
-    //TODO: aggiungi cancellazione prodotto dalla runtimestruct in caso di errore e dunque anche aggiunta del pulsante "cancella" con relativo actionlist
-    //TODO: gestione nellla JOptionPane se clicchi no fa comunque l'inserimento dell'ordine in tutto, dalla lista alle runtimestruct
     //TODO: pannelocard gestione user con modifica dati ecc.ecc.
 
     public static void main(String[] args) {
@@ -253,26 +253,26 @@ public class ApplicationDemo {
                     myPanel.add(new JLabel("Addons3"));
                     myPanel.add(combobox.get(2));
                     //TODO: modifica sopra e sotto per far si che crei un pannellocard dal design e glielo setti qui anzichè crearlo tramite codice - EDIT CI HAI PROVATO NON SEMBRA FUNZIONARE LO DEVI CREARE TIPO RUNTIME IL PANEL
-                    JOptionPane.showConfirmDialog(null, myPanel,"Please Enter Notes, Addons and Quantities Values", JOptionPane.OK_OPTION);
-
-
-                    ArrayList <String> ls = new ArrayList<>();
-                    neworder.setNotes(xField.getText());
-                    neworder.setQty((Integer) yField.getItemAt(yField.getSelectedIndex()));
-                    neworder.setId(table1.getValueAt(row,0).toString());
-                    neworder.setName(table1.getValueAt(row,1).toString());
-                    ls.add((String) combobox.get(0).getItemAt(combobox.get(0).getSelectedIndex()));
-                    ls.add((String) combobox.get(1).getItemAt(combobox.get(1).getSelectedIndex()));
-                    ls.add((String) combobox.get(2).getItemAt(combobox.get(2).getSelectedIndex()));
-                    neworder.addAddons(ls.get(0));
-                    neworder.addAddons(ls.get(1));
-                    neworder.addAddons(ls.get(2));
-                    String sldprodid = table1.getValueAt(row,1).toString();
-                    System.out.println("Id: "+neworder.getId() + "\n Name: "+neworder.getName() + "\n Qty:" + neworder.getQty() + "\n Notes:" + neworder.getNotes() + "\n Addon:" + neworder.getAddons().get(0) + "\n Addon:" + neworder.getAddons().get(1) + "\n Addon:" + neworder.getAddons().get(2));
-                    runtimestructpizza.add(neworder);
-                    listorder.add(sldprodid);
-                    updateorderlist(listorder);
-                    combobox.removeAll(combobox);
+                    int input = JOptionPane.showConfirmDialog(null, myPanel,"Please Enter Notes, Addons and Quantities Values", JOptionPane.OK_OPTION);
+                    if(input == 0){
+                        ArrayList <String> ls = new ArrayList<>();
+                        neworder.setNotes(xField.getText());
+                        neworder.setQty((Integer) yField.getItemAt(yField.getSelectedIndex()));
+                        neworder.setId(table1.getValueAt(row,0).toString());
+                        neworder.setName(table1.getValueAt(row,1).toString());
+                        ls.add((String) combobox.get(0).getItemAt(combobox.get(0).getSelectedIndex()));
+                        ls.add((String) combobox.get(1).getItemAt(combobox.get(1).getSelectedIndex()));
+                        ls.add((String) combobox.get(2).getItemAt(combobox.get(2).getSelectedIndex()));
+                        neworder.addAddons(ls.get(0));
+                        neworder.addAddons(ls.get(1));
+                        neworder.addAddons(ls.get(2));
+                        String sldprodid = table1.getValueAt(row,1).toString();
+                        System.out.println("Id: "+neworder.getId() + "\n Name: "+neworder.getName() + "\n Qty:" + neworder.getQty() + "\n Notes:" + neworder.getNotes() + "\n Addon:" + neworder.getAddons().get(0) + "\n Addon:" + neworder.getAddons().get(1) + "\n Addon:" + neworder.getAddons().get(2));
+                        runtimestructpizza.add(neworder);
+                        listorder.add(sldprodid);
+                        updateorderlist(listorder);
+                        combobox.removeAll(combobox);
+                    }
                 }
             }
         });
@@ -299,17 +299,18 @@ public class ApplicationDemo {
                     myPanel.add(new JLabel("Quantity:"));
                     myPanel.add(yField);
                     //TODO: modifica sopra e sotto per far si che crei un pannellocard dal design e glielo setti qui anzichè crearlo tramite codice - EDIT CI HAI PROVATO NON SEMBRA FUNZIONARE LO DEVI CREARE TIPO RUNTIME IL PANEL
-                    JOptionPane.showConfirmDialog(null, myPanel,"Please Enter Notes and Quantities Values", JOptionPane.OK_OPTION);
+                    int input = JOptionPane.showConfirmDialog(null, myPanel,"Please Enter Notes and Quantities Values", JOptionPane.OK_OPTION);
+                    if(input == 0){
+                        neworder.setNotes(xField.getText());
+                        neworder.setQty((Integer) yField.getItemAt(yField.getSelectedIndex()));
+                        neworder.setId(table3.getValueAt(row,0).toString());
+                        neworder.setName(table3.getValueAt(row,1).toString());
+                        String sldprodid = table3.getValueAt(row,1).toString();
+                        runtimestructproduct.add(neworder);
 
-                    neworder.setNotes(xField.getText());
-                    neworder.setQty((Integer) yField.getItemAt(yField.getSelectedIndex()));
-                    neworder.setId(table3.getValueAt(row,0).toString());
-                    neworder.setName(table3.getValueAt(row,1).toString());
-                    String sldprodid = table3.getValueAt(row,1).toString();
-                    runtimestructproduct.add(neworder);
-
-                    listorder.add(sldprodid);
-                    updateorderlist(listorder);
+                        listorder.add(sldprodid);
+                        updateorderlist(listorder);
+                    }
                 }
             }
         });
@@ -361,13 +362,48 @@ public class ApplicationDemo {
                 if(desarr.equals("Desired arrival time")){
                     desarr = null;
                 }
-                addOrder(notes,desarr,takeaway);
-                runtimestructpizza.removeAll(runtimestructpizza);
-                runtimestructproduct.removeAll(runtimestructproduct);
-                frame.setContentPane(new ApplicationDemo().Main);
-                frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-                frame.pack();
-                frame.setVisible(true);
+                if (runtimestructpizza.isEmpty() == false || runtimestructproduct.isEmpty() == false){
+                    addOrder(notes,desarr,takeaway);
+                    runtimestructpizza.removeAll(runtimestructpizza);
+                    runtimestructproduct.removeAll(runtimestructproduct);
+                    frame.setContentPane(new ApplicationDemo().Main);
+                    frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+                    frame.pack();
+                    frame.setVisible(true);
+                }
+                else{
+                    JOptionPane.showMessageDialog(null,"Order is empty");
+                }
+            }
+        });
+
+        DELETELASTINSERTIONButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if(runtimestructpizza.isEmpty() == true){
+                    JOptionPane.showMessageDialog(null,"Order don't contain pizza,nothing to remove ");
+                }
+                else{
+                    listorder.remove(runtimestructpizza.get(runtimestructpizza.size()-1).getName());
+                    updateorderlist(listorder);
+                    runtimestructpizza.remove(runtimestructpizza.get(runtimestructpizza.size() -1));
+                }
+
+            }
+        });
+        DELETEPRODUCTButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+
+                if(runtimestructproduct.isEmpty() == true){
+                    JOptionPane.showMessageDialog(null,"Order doesn't contain product,nothing to remove ");
+                }
+                else{
+                    listorder.remove(runtimestructproduct.get(runtimestructproduct.size()-1).getName());
+                    updateorderlist(listorder);
+                    runtimestructproduct.remove(runtimestructproduct.get(runtimestructproduct.size() -1));
+                }
+
             }
         });
     }
