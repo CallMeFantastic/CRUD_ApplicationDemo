@@ -10,8 +10,6 @@ public class PartialOrderPizza {
     private String notes;
     private ArrayList<String> addons;
 
-    //TODO: SISTEMA CLASSE COME PRIMA COSA SENNO'  NON PUOI ANDARE AVANTI
-
     // La lista necessitava di essere inizializzata ecco dunque che hai creato un costruttore che inizializzasse l'attributo quando invocata la creazione dell'oggetto
     public PartialOrderPizza(){
         addons = new ArrayList<String>();

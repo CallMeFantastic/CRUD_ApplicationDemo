@@ -30,6 +30,9 @@ public class ApplicationDemo {
     private JTextField desiredArrivalOrder;
     private JButton DELETELASTINSERTIONButton;
     private JButton DELETEPRODUCTButton;
+    private JTable table4;
+    private JTable table5;
+    private JButton BACKButton;
     private Connection con;
     private PreparedStatement pst;
     private ArrayList listorder;
@@ -37,9 +40,10 @@ public class ApplicationDemo {
     private ArrayList <PartialOrderProduct> runtimestructproduct;
     private ArrayList <JComboBox> combobox;
 
-    //TODO: valuta se migliorare il modo in cui sono definite alcune variabili, se farle private all'interno del metodo stesso oppure globali della clas
+    //TODO: valuta se migliorare il modo in cui sono definite alcune variabili, se farle private all'interno del metodo stesso oppure globali della class
     //TODO: controllo su inserimento come notes, desired arrival time ecc.ecc.
     //TODO: pannelocard gestione user con modifica dati ecc.ecc.
+    //TODO: fix queries and table4 and 5 not showing
 
     public static void main(String[] args) {
         frame = new JFrame("CRUD_PIZZA");
@@ -104,13 +108,37 @@ public class ApplicationDemo {
         return rd.nextInt(51);
     }
 
-    public void init(){
+    public void generatestat(int idcustomer){
+        try {
+            pst = con.prepareStatement("select count(*) from customerorder where fromcustomer=?1");
+            pst.setInt(1,idcustomer);
+            ResultSet rs = pst.executeQuery();
+            table4.setModel(DbUtils.resultSetToTableModel(rs));
+        }catch (SQLException e){
+            e.printStackTrace();
+        }
+
+    }
+
+    public void generatestat2(int idcustomer){
+        try {
+            pst = con.prepareStatement("select * from customerorder where fromcustomer=?1 order by price");
+            pst.setInt(1,idcustomer);
+            ResultSet rs = pst.executeQuery();
+            table4.setModel(DbUtils.resultSetToTableModel(rs));
+        }catch (SQLException e){
+            e.printStackTrace();
+        }
+
+    }
+
+    public void init(int customer){
         //set enterprise icon
         ImageIcon iconlogo = new ImageIcon("logo.png");
         logolabel.setIcon(iconlogo);
         connect();
         loadpizzatb();
-        loadcustomertb(String.valueOf(generaterandomidcustomer()));
+        loadcustomertb(String.valueOf(customer));
         loadproductstb();
     }
 
@@ -217,10 +245,11 @@ public class ApplicationDemo {
 
 
     public ApplicationDemo(){
+        int customer = generaterandomidcustomer();
         runtimestructpizza = new ArrayList<PartialOrderPizza>();
         runtimestructproduct = new ArrayList<PartialOrderProduct>();
         listorder = new ArrayList<String>();
-        init();
+        init(customer);
 
         table1.addMouseListener(new MouseAdapter() {
             @Override
@@ -252,7 +281,6 @@ public class ApplicationDemo {
                     myPanel.add(combobox.get(1));
                     myPanel.add(new JLabel("Addons3"));
                     myPanel.add(combobox.get(2));
-                    //TODO: modifica sopra e sotto per far si che crei un pannellocard dal design e glielo setti qui anzichè crearlo tramite codice - EDIT CI HAI PROVATO NON SEMBRA FUNZIONARE LO DEVI CREARE TIPO RUNTIME IL PANEL
                     int input = JOptionPane.showConfirmDialog(null, myPanel,"Please Enter Notes, Addons and Quantities Values", JOptionPane.OK_OPTION);
                     if(input == 0){
                         ArrayList <String> ls = new ArrayList<>();
@@ -267,7 +295,6 @@ public class ApplicationDemo {
                         neworder.addAddons(ls.get(1));
                         neworder.addAddons(ls.get(2));
                         String sldprodid = table1.getValueAt(row,1).toString();
-                        System.out.println("Id: "+neworder.getId() + "\n Name: "+neworder.getName() + "\n Qty:" + neworder.getQty() + "\n Notes:" + neworder.getNotes() + "\n Addon:" + neworder.getAddons().get(0) + "\n Addon:" + neworder.getAddons().get(1) + "\n Addon:" + neworder.getAddons().get(2));
                         runtimestructpizza.add(neworder);
                         listorder.add(sldprodid);
                         updateorderlist(listorder);
@@ -298,7 +325,6 @@ public class ApplicationDemo {
                     myPanel.add(Box.createHorizontalStrut(15)); // a spacer
                     myPanel.add(new JLabel("Quantity:"));
                     myPanel.add(yField);
-                    //TODO: modifica sopra e sotto per far si che crei un pannellocard dal design e glielo setti qui anzichè crearlo tramite codice - EDIT CI HAI PROVATO NON SEMBRA FUNZIONARE LO DEVI CREARE TIPO RUNTIME IL PANEL
                     int input = JOptionPane.showConfirmDialog(null, myPanel,"Please Enter Notes and Quantities Values", JOptionPane.OK_OPTION);
                     if(input == 0){
                         neworder.setNotes(xField.getText());
@@ -391,6 +417,7 @@ public class ApplicationDemo {
 
             }
         });
+
         DELETEPRODUCTButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -404,6 +431,32 @@ public class ApplicationDemo {
                     runtimestructproduct.remove(runtimestructproduct.get(runtimestructproduct.size() -1));
                 }
 
+            }
+        });
+
+        table2.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                if (e.getClickCount() == 1){
+                    panellocard.removeAll();
+                    panellocard.add(panellouser);
+                    panellocard.revalidate();
+                    panellocard.repaint();
+
+                    generatestat(customer);
+                    generatestat2(customer);
+
+                }
+            }
+        });
+
+        BACKButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                panellocard.removeAll();
+                panellocard.add(panellomain);
+                panellocard.revalidate();
+                panellocard.repaint();
             }
         });
     }
